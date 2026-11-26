@@ -1,15 +1,17 @@
+
 services:
   - type: web
     name: instagram-gc-bot
     env: python
     plan: free
+    runtime: python3.11.9
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn web:app --bind 0.0.0.0:$PORT --workers 1 --threads 2
     envVars:
       - key: PORT
         value: 10000
       - key: DASHBOARD_PASSWORD
-        sync: false          # set in Render dashboard — do not commit
+        sync: false
       - key: ADMIN_USERNAMES
         sync: false
       - key: GROUP_IDS
