@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GC Bot — Dashboard</title>
+<style>
+  :root {
+    --bg:#0d0d12;--surface:#16161f;--surface2:#1e1e2e;--border:#2a2a3a;
+    --accent:#7c6af7;--accent-dim:#4f43c4;--green:#4ade80;--red:#f06b7a;
+    --yellow:#fbbf24;--text:#e8e8f0;--muted:#6b6b82;--radius:14px;
+  }
+  @media(prefers-color-scheme:light){:root{--bg:#f0f0f8;--surface:#fff;--surface2:#f7f7ff;--border:#d0d0e0;--text:#1a1a2e;--muted:#7070a0;}}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100%;padding-bottom:env(safe-area-inset-bottom,24px);}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:env(safe-area-inset-top,0);z-index:10;}
+  .hl{display:flex;align-items:center;gap:.75rem;}
+  .logo-sm{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#c86dd7);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+  header h1{font-size:1rem;font-weight:700;}
+  .hr{display:flex;align-items:center;gap:.75rem;}
+  .pill{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:999px;font-size:.75rem;font-weight:600;border:1px solid;}
+  .pill.on{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08);}
+  .pill.off{color:var(--muted);border-color:var(--border);}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .btn-sm{padding:.35rem .9rem;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.78rem;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;}
+  main{max-width:900px;margin:0 auto;padding:1.5rem;display:grid;gap:1.25rem;grid-template-columns:1fr;}
+  @media(min-width:640px){main{grid-template-columns:1fr 1fr;}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;display:flex;flex-direction:column;gap:1rem;}
+  .card.full{grid-column:1/-1;}
+  .ct{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  .btn-p{padding:.7rem 1.4rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;}
+  .btn-d{padding:.7rem 1.4rem;background:rgba(240,107,122,.15);color:var(--red);border:1px solid rgba(240,107,122,.3);border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;}
+  label{font-size:.8rem;color:var(--muted);display:block;margin-bottom:.3rem;font-weight:500;}
+  input[type=text],textarea{width:100%;padding:.65rem .9rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.88rem;outline:none;transition:border-color .2s;font-family:inherit;resize:vertical;}
+  input:focus,textarea:focus{border-color:var(--accent);}
+  textarea{min-height:90px;}
+  .hint{font-size:.73rem;color:var(--muted);margin-top:.25rem;}
+  .btn-s{padding:.65rem 1.2rem;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;}
+  .sr{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);}
+  .sr:last-child{border-bottom:none;}
+  .sl{font-size:.85rem;color:var(--muted);}
+  .sv{font-size:.95rem;font-weight:700;color:var(--text);}
+  .warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:.6rem .9rem;font-size:.8rem;color:var(--yellow);}
+  code{background:var(--bg);padding:.1rem .4rem;border-radius:4px;font-size:.82rem;}
+  ol{font-size:.82rem;color:var(--muted);padding-left:1.2rem;line-height:1.8;}
+  table{width:100%;font-size:.82rem;border-collapse:collapse;}
+  th{text-align:left;padding:.5rem;border-bottom:1px solid var(--border);color:var(--muted);}
+  td{padding:.5rem;border-bottom:1px solid var(--border);}
+</style>
+</head>
+<body>
+<header>
+  <div class="hl">
+    <div class="logo-sm">🤖</div>
+    <h1>GC Bot Panel</h1>
+  </div>
+  <div class="hr">
+    <div class="pill {{ 'on' if bot_running else 'off' }}">
+      <span class="dot"></span>{{ 'Running' if bot_running else 'Stopped' }}
+    </div>
+    <a class="btn-sm" href="/logout">Logout</a>
+  </div>
+</header>
+<main>
+  {% if warnings %}
+  <div class="card full">
+    <div class="ct">Warnings</div>
+    {% for w in warnings %}<div class="warn">{{ w }}</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="ct">Bot Control</div>
+    {% if not bot_running %}
+    <form method="POST" action="/start"><button class="btn-p" type="submit">▶ Start Bot</button></form>
+    {% else %}
+    <form method="POST" action="/stop"><button class="btn-d" type="submit">⏹ Stop Bot</button></form>
+    {% endif %}
+    <p style="font-size:.78rem;color:var(--muted)">Polls every 4 s. Auto-messages at 12:00 AM and 7:00 AM.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">Today — {{ today_key }}</div>
+    <div class="sr"><span class="sl">Total messages</span><span class="sv">{{ total_msgs }}</span></div>
+    <div class="sr"><span class="sl">Active users</span><span class="sv">{{ active_users }}</span></div>
+    <div class="sr"><span class="sl">Members tracked</span><span class="sv">{{ members_tracked }}</span></div>
+  </div>
+
+  <div class="card full">
+    <div class="ct">Configuration</div>
+    <form method="POST" action="/save">
+      <div style="display:grid;gap:1rem;grid-template-columns:1fr 1fr;">
+        <div>
+          <label>Admin Usernames <span style="color:var(--red)">(max 5)</span></label>
+          <input type="text" name="admins" value="{{ env.get('ADMIN_USERNAMES','') }}" placeholder="admin1,admin2">
+          <p class="hint">Comma-separated. No @ symbol.</p>
+        </div>
+        <div>
+          <label>Group Thread IDs <span style="color:var(--red)">(max 3)</span></label>
+          <input type="text" name="groups" value="{{ env.get('GROUP_IDS','') }}" placeholder="3402823...">
+          <p class="hint">Instagram DM thread IDs, comma-separated.</p>
+        </div>
+      </div>
+      <div style="margin-top:1rem;">
+        <label>Instagram Session Cookies (Firefox JSON export)</label>
+        <textarea name="cookies" placeholder='[{"name":"sessionid","value":"..."}]'>{{ env.get('IG_COOKIES_JSON','') }}</textarea>
+        <p class="hint">Firefox DevTools → Storage → Cookies → instagram.com → right-click → Copy All as JSON.</p>
+      </div>
+      <div style="margin-top:1rem;"><button class="btn-s" type="submit">💾 Save Config</button></div>
+    </form>
+  </div>
+
+  <div class="card full">
+    <div class="ct">How to get Thread ID</div>
+    <ol>
+      <li>Open Instagram web → DMs → open the group chat.</li>
+      <li>URL: <code>https://www.instagram.com/direct/t/3402823668417...</code></li>
+      <li>Copy the long number after <code>/t/</code></li>
+      <li>Paste above. Comma-separate multiple. Max 3.</li>
+    </ol>
+  </div>
+
+  <div class="card full">
+    <div class="ct">Admin Commands</div>
+    <table>
+      <thead><tr><th>Command</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr><td><code>/spam</code></td><td style="color:var(--muted)">@bot /spam Hello → sends 15×</td></tr>
+        <tr><td><code>/song</code></td><td style="color:var(--muted)">@bot /song Shape of You → sends song</td></tr>
+        <tr><td><code>/bad</code></td><td style="color:var(--muted)">@bot /bad @user BHGG → auto-replies to target</td></tr>
+        <tr><td><code>/stop</code></td><td style="color:var(--muted)">Reply /stop to bot → cancels spam or /bad</td></tr>
+        <tr><td><code>/menu</code></td><td style="color:var(--muted)">@bot /menu → full command list in GC</td></tr>
+        <tr><td><code>/total</code></td><td style="color:var(--muted)">@bot /total → today's message stats</td></tr>
+        <tr><td><code>/send_gc</code></td><td style="color:var(--muted)">DM bot: /send_gc hi → bot sends to all GCs</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<script>
+setInterval(async()=>{
+  try{const r=await fetch('/status');const d=await r.json();
+  const p=document.querySelector('.pill');if(!p)return;
+  if(d.bot_running){p.className='pill on';p.innerHTML='<span class="dot"></span>Running';}
+  else{p.className='pill off';p.innerHTML='<span class="dot"></span>Stopped';}}catch(e){}
+},8000);
+</script>
+</body>
+</html>
